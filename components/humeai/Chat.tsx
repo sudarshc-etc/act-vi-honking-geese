@@ -1,7 +1,7 @@
 import { VoiceProvider } from "@humeai/voice-react";
 import Messages from "./Messages";
 import StartCall from "./StartCall";
-import CustomPhasesSlider from "./CustomPhasesSlider";
+import CustomPhasesSlider from "../shared/CustomPhasesSlider";
 
 export default function Chat({
   accessToken,

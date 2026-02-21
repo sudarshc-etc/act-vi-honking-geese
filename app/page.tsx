@@ -1,15 +1,18 @@
-import { fetchAccessToken } from "hume";
-import ClientComponet from './ClientComponent'
+import Link from "next/link"
 
-export default async function Page() {
-  const accessToken = await fetchAccessToken({
-    apiKey: String(process.env.HUME_API_KEY),
-    secretKey: String(process.env.HUME_SECRET_KEY),
-  });
-
+export default function Home() {
   return (
-    <div className={"grow flex flex-col"}>
-      <ClientComponet accessToken={accessToken} />
-    </div>
-  );
+    <main>
+      <h1>AI Playground</h1>
+
+      <ul>
+        <li>
+          <Link href="/hume">Hume AI (Emotion Voice)</Link>
+        </li>
+        <li>
+          <Link href="/openai">OpenAI (Realtime Voice)</Link>
+        </li>
+      </ul>
+    </main>
+  )
 }

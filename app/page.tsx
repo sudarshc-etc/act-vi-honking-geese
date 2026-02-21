@@ -1,15 +1,16 @@
 import { fetchAccessToken } from "hume";
-import ClientComponet from './ClientComponent'
+import ClientComponent from './ClientComponent';
 
 export default async function Page() {
+  // Use environment variables for security
   const accessToken = await fetchAccessToken({
     apiKey: String(process.env.HUME_API_KEY),
     secretKey: String(process.env.HUME_SECRET_KEY),
   });
 
   return (
-    <div className={"grow flex flex-col"}>
-      <ClientComponet accessToken={accessToken} />
+    <div className="grow flex flex-col items-center justify-center min-h-screen">
+      <ClientComponent accessToken={accessToken} />
     </div>
   );
 }

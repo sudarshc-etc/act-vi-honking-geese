@@ -1,13 +1,28 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
 
-export default function OpenAIIntegration({ gooseName }: { gooseName: string }) {
+import { useEffect, useRef, useState } from "react";
+import { NALA_BASE_PROMPTS, SIMBA_BASE_PROMPTS, NALA_VOICE, SIMBA_VOICE } from "./OpenAIConstants";
+
+export default function OpenAIIntegration({
+  gooseName,
+  phase,
+  stream,
+}: {
+  gooseName: string;
+  phase: string;
+  stream: MediaStream | null;
+}) {
   const [callActive, setCallActive] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  let activeButtonClass = gooseName === "Nala" ? "bg-linear-65 from-purple-500 to-pink-500" : 
+                                           "bg-linear-to-t from-sky-500 to-indigo-500";
+
+  // Setup audio element
   useEffect(() => {
     audioRef.current = document.createElement("audio");
     audioRef.current.autoplay = true;
@@ -19,7 +34,7 @@ export default function OpenAIIntegration({ gooseName }: { gooseName: string }) 
   }, []);
 
   const startSession = async () => {
-    if (callActive) return;
+    if (!stream || callActive) return;
 
     const pc = new RTCPeerConnection();
     pcRef.current = pc;
@@ -31,16 +46,31 @@ export default function OpenAIIntegration({ gooseName }: { gooseName: string }) 
     };
 
     const dc = pc.createDataChannel("oai-events");
-    dc.onmessage = (e) => console.log("event:", e.data);
     dcRef.current = dc;
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    dc.onopen = () => {
+      const isSimba = gooseName === "Simba";
+
+      dc.send(JSON.stringify({
+        type: "session.update",
+        session: { 
+          voice: isSimba ? SIMBA_VOICE : NALA_VOICE,
+          instructions: isSimba
+            ? SIMBA_BASE_PROMPTS
+            : NALA_BASE_PROMPTS }
+      }));
+    };
+
+    stream.getTracks().forEach(track =>
+      pc.addTrack(track, stream)
+    );
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    const sessionRes = await fetch("/api/openai/session", { method: "POST" });
+    const sessionRes = await fetch("/api/openai/session", {
+      method: "POST",
+    });
     const session = await sessionRes.json();
 
     const answerRes = await fetch(
@@ -65,22 +95,89 @@ export default function OpenAIIntegration({ gooseName }: { gooseName: string }) 
 
   const endSession = () => {
     dcRef.current?.close();
-
-    pcRef.current?.getSenders().forEach(sender => sender.track?.stop());
     pcRef.current?.close();
     pcRef.current = null;
-
     setCallActive(false);
   };
 
+  const pauseSession = () => {
+    if (!pcRef.current) return;
+
+    pcRef.current.getSenders().forEach(sender => {
+      if (sender.track?.kind === "audio") {
+        sender.track.enabled = false; // stop mic
+      }
+    });
+
+    setIsPaused(true);
+
+    audioRef.current && (audioRef.current.muted = true);
+  };
+
+  const resumeSession = () => {
+    if (!pcRef.current) return;
+
+    pcRef.current.getSenders().forEach(sender => {
+      if (sender.track?.kind === "audio") {
+        sender.track.enabled = true; // resume mic
+      }
+    });
+
+    setIsPaused(false);
+
+    audioRef.current && (audioRef.current.muted = false);
+  };
+
+  useEffect(() => {
+    if (!dcRef.current || !callActive) return;
+
+    const emotionInstruction = `
+      Current emotional tone: ${phase}.
+      Strongly express this emotion in voice, pacing, and word choice.
+    `;
+
+    dcRef.current.send(JSON.stringify({
+      type: "session.update",
+      session: { instructions: emotionInstruction }
+    }));
+
+  }, [phase]);
+
   return (
-    <div className="flex justify-center gap-4">
-      <button onClick={startSession} disabled={callActive}>
-        Start Session
+    <div className="flex gap-4">
+      <button
+        onClick={startSession}
+        disabled={callActive}
+        className={`h-14 w-1/2 m-5 ${activeButtonClass} cursor-pointer rounded-lg`}
+      >
+        Start
       </button>
-      <button onClick={endSession} disabled={!callActive}>
-        End Session
+
+      <button
+        onClick={endSession}
+        disabled={!callActive}
+        className={`h-14 w-1/2 m-5 ${activeButtonClass} cursor-pointer rounded-lg`}
+      >
+        End
       </button>
+
+      {callActive && !isPaused && (
+        <button
+          onClick={pauseSession}
+          className={`h-14 w-1/2 m-5 ${activeButtonClass} cursor-pointer rounded-lg`}
+        >
+          Pause
+        </button>
+      )}
+
+      {callActive && isPaused && (
+        <button
+          onClick={resumeSession}
+          className={`h-14 w-1/2 m-5 ${activeButtonClass} cursor-pointer rounded-lg`}
+        >
+          Resume
+        </button>
+      )}
     </div>
   );
 }

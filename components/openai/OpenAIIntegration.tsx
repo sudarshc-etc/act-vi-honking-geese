@@ -21,7 +21,7 @@ export default function OpenAIIntegration({ gooseName }: { gooseName: string }) 
   const startSession = async () => {
     if (callActive) return;
 
-    const pc = new RTCPeerConnection();
+    const pc = new RTCPeerConnection(); 
     pcRef.current = pc;
 
     pc.ontrack = (e) => {

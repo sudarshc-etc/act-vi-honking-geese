@@ -1,12 +1,14 @@
-import CustomPhasesSlider from "../shared/CustomPhasesSlider";
 import { useEffect, useState } from "react";
 import HumeWebSocketCall from "./HumeWebSocketCall";
+import CustomPhasesSliderHume from "./CustomPhasesSliderHume";
 
 export default function Chat({
   accessToken,
 }: {
   accessToken: string;
 }) {
+  const [simbaPhase, setSimbaPhase] = useState("happy");
+  const [nalaPhase, setNalaPhase] = useState("happy");
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   
     // Capture mic ONCE
@@ -23,12 +25,18 @@ export default function Chat({
       </h1>
       <div className="grid md:grid-cols-2 gap-1 content-evenly">
         <div className="p-10 border-4 border-gray-500">
-          <CustomPhasesSlider gooseName = 'Simba'/>
-          <HumeWebSocketCall gooseName="Simba" accessToken={accessToken}/>
+          <CustomPhasesSliderHume
+                      gooseName="Simba"
+                      onPhaseChange={setSimbaPhase}
+                    />
+          <HumeWebSocketCall gooseName="Simba" accessToken={accessToken} phase={simbaPhase}/>
         </div>
         <div className="p-10 border-4 border-gray-500">
-          <CustomPhasesSlider gooseName = 'Nala'/>
-          <HumeWebSocketCall gooseName="Nala" accessToken={accessToken}/>
+          <CustomPhasesSliderHume
+                      gooseName="Nala"
+                      onPhaseChange={setNalaPhase}
+                    />
+          <HumeWebSocketCall gooseName="Nala" accessToken={accessToken} phase={nalaPhase}/>
         </div>
       </div>
     </div>

@@ -46,6 +46,6 @@ export const NALA_BASE_PROMPTS = `
     No narration. No explanation.
 `;
 
-export const SIMBA_VOICE = '6a42908a-f332-4c39-a93a-98c7d6017f12';
+export const SIMBA_VOICE = '8f742160-8d34-487f-acb6-53a32ed4bc86';
 
-export const NALA_VOICE = 'ebba4902-69de-4e01-9846-d8feba5a1a3f';
+export const NALA_VOICE = '599a116b-b021-49e7-bc0e-258ca4fba031';

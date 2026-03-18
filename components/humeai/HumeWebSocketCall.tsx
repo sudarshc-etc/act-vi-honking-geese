@@ -6,9 +6,11 @@ import { NALA_BASE_PROMPTS, SIMBA_BASE_PROMPTS, NALA_VOICE, SIMBA_VOICE } from "
 export default function HumeWebSocketCall({
   accessToken,
   gooseName,
+  phase,
 }: {
   accessToken: string;
   gooseName: "Simba" | "Nala";
+  phase: string
 }) {
   const isSimba = gooseName === "Simba";
 
@@ -16,13 +18,17 @@ export default function HumeWebSocketCall({
     ? "bg-linear-to-t from-sky-500 to-indigo-500"
     : "bg-linear-65 from-purple-500 to-pink-500";
 
+  const basePrompt = isSimba ? SIMBA_BASE_PROMPTS : NALA_BASE_PROMPTS;
+
+  const voice = isSimba ? SIMBA_VOICE : NALA_VOICE;
+
   const [callActive, setCallActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const audioQueueRef = useRef<Float32Array[]>([]);
+  const audioQueueRef = useRef<(string | Float32Array)[]>([]);
 
   const startSession = async () => {
     if (callActive) return;
@@ -39,27 +45,50 @@ export default function HumeWebSocketCall({
     let playing = false;
 
     const playQueue = async () => {
-      if (playing || isPaused) return;
-      if (audioQueueRef.current.length === 0) return;
+        if (playing || isPaused) return;
+        if (audioQueueRef.current.length === 0) return;
 
-      playing = true;
-      const base64 = audioQueueRef.current.shift()!;
-      const binary = atob(base64);
-      const buffer = new ArrayBuffer(binary.length);
-      const view = new Uint8Array(buffer);
-      for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i);
+        playing = true;
 
-      const decoded = await audioContext.decodeAudioData(buffer);
-      const source = audioContext.createBufferSource();
-      source.buffer = decoded;
-      source.connect(audioContext.destination);
+        const audio = audioQueueRef.current.shift()!;
+        const audioContext = audioContextRef.current!;
 
-      source.onended = () => {
-        playing = false;
-        playQueue(); // play next in queue
-      };
+        let source = audioContext.createBufferSource();
 
-      source.start();
+        // CASE 1: Float32Array (raw PCM)
+        if (audio instanceof Float32Array) {
+            const buffer = audioContext.createBuffer(
+                1,
+                audio.length,
+                audioContext.sampleRate
+            );
+
+            const safeAudio = new Float32Array(audio);
+            buffer.copyToChannel(safeAudio, 0);
+            source.buffer = buffer;
+        } 
+        // CASE 2: base64 string
+        else {
+            const binary = atob(audio);
+            const buffer = new ArrayBuffer(binary.length);
+            const view = new Uint8Array(buffer);
+
+            for (let i = 0; i < binary.length; i++) {
+                view[i] = binary.charCodeAt(i);
+            }
+
+            const decoded = await audioContext.decodeAudioData(buffer);
+            source.buffer = decoded;
+        }
+
+        source.connect(audioContext.destination);
+
+        source.onended = () => {
+            playing = false;
+            playQueue(); // play next in queue
+        };
+
+        source.start();
     };
 
     ws.onopen = () => {
@@ -68,8 +97,8 @@ export default function HumeWebSocketCall({
       ws.send(
         JSON.stringify({
           type: "session_settings",
-          system_prompt: isSimba ? SIMBA_BASE_PROMPTS : NALA_BASE_PROMPTS,
-          voice_id: isSimba ? SIMBA_VOICE : NALA_VOICE,
+          system_prompt: basePrompt,
+          voice_id: voice
         })
       );
 
@@ -130,6 +159,27 @@ export default function HumeWebSocketCall({
     // Resume playing queued audio
     mediaRecorderRef.current?.resume();
   };
+
+  useEffect(() => {
+    if (!wsRef.current || !callActive) return;
+
+    const emotionInstruction = `
+        Current emotional tone: ${phase}.
+        Strongly express this emotion in voice, pacing, and word choice.
+        Do not sound monotone.
+    `;
+
+    wsRef.current.send(
+        JSON.stringify({
+        type: "session_settings",
+        system_prompt: `
+            ${basePrompt}
+
+            ${emotionInstruction}
+        `,
+        })
+    );
+    }, [phase, callActive]);
 
   return (
     <div className="flex gap-4">

@@ -24,7 +24,7 @@ export default function OpenAIIntegration({
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  // ADDED: Timer ref for 5-second silence
+  // ADDED: Ref to track the 15s awkward silence interval
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   let activeButtonClass = isParticipant1
@@ -56,7 +56,7 @@ export default function OpenAIIntegration({
     return Prompts.SIMBA_GEESE_PROMPTS;
   };
 
-  // ADDED: Extreme emotion prompt generator
+  // ADDED: Maps slider phase to extreme emotional instructions for the AI
   const getEmotionPrompt = (phase: string) => {
     switch (phase) {
       case 'happy':
@@ -74,9 +74,12 @@ export default function OpenAIIntegration({
     }
   };
 
-  // ADDED: Combine role, emotion, and system override prompts
   const getCombinedInstructions = (role: string, phase: string, eventPrompt?: string) => {
     let instr = `${getBasePrompt(role)}\n\n--- CRITICAL INSTRUCTION ---\n${getEmotionPrompt(phase)}`;
+    
+    // ADDED: Forces short AI responses to prevent infinite monologue loops
+    instr += "\n\nCRITICAL RULE: Keep your responses VERY SHORT (1 to 2 sentences maximum). Do NOT monologue. Stop talking quickly and wait for the other person to respond.";
+
     if (eventPrompt) {
       instr += `\n\n<context_event>URGENT SYSTEM OVERRIDE: ${eventPrompt}</context_event>`;
     }
@@ -98,37 +101,48 @@ export default function OpenAIIntegration({
           voice: isParticipant1 ? Prompts.VOICE_1 : Prompts.VOICE_2,
           instructions: getCombinedInstructions(currentRole, currentPhase),
           input_audio_transcription: { model: "whisper-1" },
+          
+          // ADDED: Configures VAD threshold to ignore background noise and prevent false triggers
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.6,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 1000
+          }
         }
       }));
     };
 
-    // ADDED: Listen for AI speech events to trigger 5-second silence
     dc.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      if (data.type === "input_audio_buffer.speech_started") {
+      // ADDED: Clear silence timer if user speaks or AI generates a new response
+      if (data.type === "input_audio_buffer.speech_started" || data.type === "response.created") {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       }
 
+      // ADDED: Start 15s timer after AI finishes speaking to trigger the awkward silence event
       if (data.type === "response.done") {
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = setTimeout(() => {
-          if (dcRef.current?.readyState === "open") {
-            // ADDED: Inject virtual text to break silence
-            dcRef.current.send(JSON.stringify({
-              type: "conversation.item.create",
-              item: {
-                type: "message",
-                role: "user",
-                content: [{
-                  type: "input_text",
-                  text: "*SYSTEM EVENT: The user has remained completely silent for 5 seconds. React to this awkward silence immediately!*"
-                }]
-              }
-            }));
-            dcRef.current.send(JSON.stringify({ type: "response.create" }));
-          }
-        }, 5000);
+        
+        if (data.response && data.response.output && data.response.output.length > 0) {
+          silenceTimerRef.current = setTimeout(() => {
+            if (dcRef.current?.readyState === "open") {
+              dcRef.current.send(JSON.stringify({
+                type: "conversation.item.create",
+                item: {
+                  type: "message",
+                  role: "user",
+                  content: [{
+                    type: "input_text",
+                    text: "*SYSTEM EVENT: The user has remained completely silent for 5 seconds. React to this awkward silence immediately!*"
+                  }]
+                }
+              }));
+              dcRef.current.send(JSON.stringify({ type: "response.create" }));
+            }
+          }, 15000); 
+        }
       }
     };
 
@@ -155,12 +169,12 @@ export default function OpenAIIntegration({
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
   };
 
-  // ADDED: Effect to handle Slam/Prop system events
+  // ADDED: Intercepts system events (Slam/Prop) to cancel current speech and force immediate reaction
   useEffect(() => {
     if (!dcRef.current || !callActive || !systemEvent) return;
     if (dcRef.current.readyState !== "open") return;
     
-    // ADDED: Force cancel AI response and mute audio instantly
+    // ADDED: Hard interrupt AI speech and briefly mute audio to simulate an instant cut-off
     if (systemEvent.type === "slam") {
       dcRef.current.send(JSON.stringify({ type: "response.cancel" }));
       if (audioRef.current) audioRef.current.muted = true; 
@@ -174,7 +188,7 @@ export default function OpenAIIntegration({
       session: { instructions: currentCombined }
     }));
 
-    // ADDED: Inject the slam/prop event as user input
+    // ADDED: Inject system event as user input and force immediate AI response
     dcRef.current.send(JSON.stringify({
       type: "conversation.item.create",
       item: {
@@ -187,12 +201,11 @@ export default function OpenAIIntegration({
       }
     }));
 
-    // ADDED: Force AI to generate response immediately
     dcRef.current.send(JSON.stringify({ type: "response.create" }));
 
   }, [systemEvent, callActive, currentRole, currentPhase]);
 
-  // ADDED: Effect to update instructions on role/emotion change
+  // ADDED: Dynamically updates the AI session instructions when role or emotion slider changes
   useEffect(() => {
     if (!dcRef.current || !callActive) return;
     if (dcRef.current.readyState !== "open") return;
@@ -209,7 +222,6 @@ export default function OpenAIIntegration({
       <div className="flex items-center justify-between mb-2">
         <span className={`text-xl font-black ${labelColor}`}>Participant {participantIndex + 1} Role:</span>
         <div className="flex gap-2">
-          {/* ADDED: Render role switching buttons */}
           {roles.map(r => (
             <button
               key={r}

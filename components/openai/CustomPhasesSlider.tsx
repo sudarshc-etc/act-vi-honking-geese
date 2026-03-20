@@ -2,14 +2,16 @@
 import { useEffect, useState } from "react";
 
 export default function CustomPhasesSlider({
-  gooseName,
+  participantLabel,
   onPhaseChange,
+  isParticipant1,
 }: {
-  gooseName: string;
+  participantLabel: string;
   onPhaseChange: (phase: string) => void;
+  isParticipant1: boolean;
 }) {
   const [value, setValue] = useState(0);
-  const [phase, setPhase] = useState('');
+  const [phase, setPhase] = useState('happy');
 
   const phases = [
     { value: 0, label: "happy" },
@@ -19,9 +21,8 @@ export default function CustomPhasesSlider({
     { value: 100, label: "sarcastic" },
   ];
 
-  let phaseSliderColor = gooseName === 'Nala' ? 'accent-pink-500' : 'accent-blue-500';
-
-  let phaseBulletColor = gooseName === 'Nala' ? 'bg-pink-500' : 'bg-blue-500';
+  let phaseSliderColor = isParticipant1 ? 'accent-sky-500' : 'accent-pink-500';
+  let phaseBulletColor = isParticipant1 ? 'bg-sky-500' : 'bg-pink-500';
 
   useEffect(() => {
     const selected = phases.find((p) => p.value === value);
@@ -29,12 +30,12 @@ export default function CustomPhasesSlider({
       onPhaseChange(selected.label);
       setPhase(selected.label);
     }
-  }, [value]);
+  }, [value, onPhaseChange]);
 
   return (
-    <div className="w-full max-w-md mx-auto m-10">
-      <h2 className="m-3 flex justify-center text-4xl font-bold text-white-900">
-        {gooseName} Emotion
+    <div className="w-full max-w-md mx-auto m-5 p-4 bg-gray-900 rounded-lg border border-gray-700 shadow-inner">
+      <h2 className={`m-3 flex justify-center text-2xl font-black ${isParticipant1 ? 'text-sky-400' : 'text-pink-400'}`}>
+        {participantLabel} Emotion
       </h2>
 
       <input
@@ -44,30 +45,25 @@ export default function CustomPhasesSlider({
         step="25"
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className={`w-full ${phaseSliderColor}`}
+        className={`w-full ${phaseSliderColor} cursor-pointer`}
       />
 
-      {/* phases */}
-      <div className="relative w-full mt-2">
-        {phases.map((phase) => (
+      <div className="relative w-full mt-2 h-6">
+        {phases.map((p) => (
           <div
-            key={phase.value}
+            key={p.value}
             className="absolute flex flex-col items-center"
-            style={{ left: `${phase.value}%`, transform: "translateX(-50%)" }}
+            style={{ left: `${p.value}%`, transform: "translateX(-50%)" }}
           >
             <div
-              className={`w-2 h-2 rounded-full ${
-                value === phase.value ? phaseBulletColor : "bg-gray-400"
+              className={`w-3 h-3 rounded-full border-2 border-gray-900 ${
+                value === p.value ? phaseBulletColor : "bg-gray-600"
               }`}
             ></div>
-            <span className="text-xs mt-1">{phase.label}</span>
+            <span className="text-xs mt-1 text-gray-400 font-medium">{p.label}</span>
           </div>
         ))}
       </div>
-
-      <p className="mt-11 text-center text-sm text-gray-600">
-        {gooseName} is now prompted to be: {phase}
-      </p>
     </div>
   );
 }

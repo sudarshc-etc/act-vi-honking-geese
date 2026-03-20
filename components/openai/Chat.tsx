@@ -7,11 +7,14 @@ import OpenAIIntegration from "./OpenAIIntegration";
 export default function Chat() {
   const [globalTension, setGlobalTension] = useState(0); 
   const [chaosMeter, setChaosMeter] = useState(0);
+  
+  // ADDED: System event state for Slam/Prop triggers
   const [systemEvent, setSystemEvent] = useState<{type: string, prompt: string, timestamp: number} | null>(null);
 
   const [simbaPhase, setSimbaPhase] = useState("happy");
   const [nalaPhase, setNalaPhase] = useState("happy");
 
+  // ADDED: Role switching states
   const [role1, setRole1] = useState("Goose");
   const [role2, setRole2] = useState("Goose");
 
@@ -24,6 +27,7 @@ export default function Chat() {
       .catch();
   }, []);
 
+  // ADDED: Slam button logic
   const handleSlamButton = () => {
     setGlobalTension(100);
     setChaosMeter(prev => Math.min(prev + 25, 100));
@@ -34,6 +38,7 @@ export default function Chat() {
     });
   };
 
+  // ADDED: Prop button logic
   const handlePickUpProp = () => {
     setSystemEvent({
       type: "prop",
@@ -72,6 +77,7 @@ export default function Chat() {
 
       <div className="grid md:grid-cols-2 gap-6 p-6 max-w-7xl mx-auto">
         <div className="p-8 border-4 border-sky-500 rounded-2xl bg-gray-900 shadow-[0_0_30px_rgba(14,165,233,0.3)]">
+          {/* ADDED: Pass roles and events to Integration */}
           <OpenAIIntegration
             participantIndex={0}
             currentRole={role1}

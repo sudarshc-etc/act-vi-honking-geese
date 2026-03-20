@@ -23,6 +23,9 @@ export default function OpenAIIntegration({
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // ADDED: Timer ref for 5-second silence
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   let activeButtonClass = isParticipant1
     ? "bg-linear-to-t from-sky-500 to-indigo-500"
@@ -36,6 +39,7 @@ export default function OpenAIIntegration({
     return () => {
       pcRef.current?.close();
       audioRef.current?.remove();
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     };
   }, []);
 
@@ -52,10 +56,29 @@ export default function OpenAIIntegration({
     return Prompts.SIMBA_GEESE_PROMPTS;
   };
 
+  // ADDED: Extreme emotion prompt generator
+  const getEmotionPrompt = (phase: string) => {
+    switch (phase) {
+      case 'happy':
+        return "CURRENT EMOTION: EXTREMELY HAPPY AND OVERJOYED. Speak with extreme high energy, extreme joy, and fast pacing. Laugh often! Use very enthusiastic words and multiple exclamation marks!!!";
+      case 'sad':
+        return "CURRENT EMOTION: DEVASTATED AND WEEPING. Your voice is trembling, breaking, and weak. Speak very slowly and softly. Use ellipses (...) frequently to show hesitation, crying, and deep sorrow. Sound absolutely heartbroken.";
+      case 'angry':
+        return "CURRENT EMOTION: FURIOUS AND SCREAMING. You are completely enraged! Yell your words. Use short, aggressive sentences. USE ALL CAPS FOR EMPHASIS. Show zero patience and extreme hostility.";
+      case 'confused':
+        return "CURRENT EMOTION: DEEPLY CONFUSED AND LOST. You have no idea what is going on. Stutter slightly (e.g., 'W-wait... what?'). Ask heavily bewildered questions. Speak with a very hesitant, questioning tone.";
+      case 'sarcastic':
+        return "CURRENT EMOTION: EXTREMELY SARCASTIC AND CONDESCENDING. Mock the other person. Speak slowly with a dry, patronizing, and arrogant tone. Give exaggerated, fake praise. Be as passive-aggressive and snarky as possible.";
+      default:
+        return `CURRENT EMOTION: ${phase.toUpperCase()}. Strongly express this in your voice tone.`;
+    }
+  };
+
+  // ADDED: Combine role, emotion, and system override prompts
   const getCombinedInstructions = (role: string, phase: string, eventPrompt?: string) => {
-    let instr = `${getBasePrompt(role)}\n\nCurrent emotional tone to express: ${phase}. Strongly express this in voice and word choice.`;
+    let instr = `${getBasePrompt(role)}\n\n--- CRITICAL INSTRUCTION ---\n${getEmotionPrompt(phase)}`;
     if (eventPrompt) {
-      instr += `\n\n<context_event>${eventPrompt}</context_event>`;
+      instr += `\n\n<context_event>URGENT SYSTEM OVERRIDE: ${eventPrompt}</context_event>`;
     }
     return instr;
   };
@@ -79,6 +102,36 @@ export default function OpenAIIntegration({
       }));
     };
 
+    // ADDED: Listen for AI speech events to trigger 5-second silence
+    dc.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "input_audio_buffer.speech_started") {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      }
+
+      if (data.type === "response.done") {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+          if (dcRef.current?.readyState === "open") {
+            // ADDED: Inject virtual text to break silence
+            dcRef.current.send(JSON.stringify({
+              type: "conversation.item.create",
+              item: {
+                type: "message",
+                role: "user",
+                content: [{
+                  type: "input_text",
+                  text: "*SYSTEM EVENT: The user has remained completely silent for 5 seconds. React to this awkward silence immediately!*"
+                }]
+              }
+            }));
+            dcRef.current.send(JSON.stringify({ type: "response.create" }));
+          }
+        }, 5000);
+      }
+    };
+
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -99,11 +152,15 @@ export default function OpenAIIntegration({
     pcRef.current = null;
     dcRef.current = null;
     setCallActive(false);
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
   };
 
+  // ADDED: Effect to handle Slam/Prop system events
   useEffect(() => {
     if (!dcRef.current || !callActive || !systemEvent) return;
-
+    if (dcRef.current.readyState !== "open") return;
+    
+    // ADDED: Force cancel AI response and mute audio instantly
     if (systemEvent.type === "slam") {
       dcRef.current.send(JSON.stringify({ type: "response.cancel" }));
       if (audioRef.current) audioRef.current.muted = true; 
@@ -117,6 +174,7 @@ export default function OpenAIIntegration({
       session: { instructions: currentCombined }
     }));
 
+    // ADDED: Inject the slam/prop event as user input
     dcRef.current.send(JSON.stringify({
       type: "conversation.item.create",
       item: {
@@ -129,12 +187,15 @@ export default function OpenAIIntegration({
       }
     }));
 
+    // ADDED: Force AI to generate response immediately
     dcRef.current.send(JSON.stringify({ type: "response.create" }));
 
   }, [systemEvent, callActive, currentRole, currentPhase]);
 
+  // ADDED: Effect to update instructions on role/emotion change
   useEffect(() => {
     if (!dcRef.current || !callActive) return;
+    if (dcRef.current.readyState !== "open") return;
     dcRef.current.send(JSON.stringify({
       type: "session.update",
       session: { instructions: getCombinedInstructions(currentRole, currentPhase) }
@@ -148,6 +209,7 @@ export default function OpenAIIntegration({
       <div className="flex items-center justify-between mb-2">
         <span className={`text-xl font-black ${labelColor}`}>Participant {participantIndex + 1} Role:</span>
         <div className="flex gap-2">
+          {/* ADDED: Render role switching buttons */}
           {roles.map(r => (
             <button
               key={r}

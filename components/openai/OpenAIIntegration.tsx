@@ -40,17 +40,17 @@ export default function OpenAIIntegration({
 }) {
   const [callActive, setCallActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  
+
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const lastEventTime = useRef<number>(0);
   const usedKeywords = useRef<Set<string>>(new Set());
   const isPlayerSpeaking = useRef<boolean>(false);
   const queuedSlam = useRef<any>(null);
-  
+
   const pendingLieRef = useRef<boolean>(false);
   const isLyingRef = useRef<boolean>(false);
 
@@ -66,7 +66,7 @@ export default function OpenAIIntegration({
     audioRef.current = document.createElement("audio");
     audioRef.current.autoplay = true;
     document.body.appendChild(audioRef.current);
-    
+
     return () => {
       pcRef.current?.close();
       if (audioRef.current) {
@@ -109,7 +109,7 @@ export default function OpenAIIntegration({
       if (eventPrompt) instr += `\n\n<context_event>URGENT OVERRIDE: ${eventPrompt}</context_event>`;
       return instr;
     }
-    
+
     let instr = `${getBasePrompt(personality)}\n\n--- STORY CONTEXT ---\n${getStoryContext(personality, storyPhase)}\n\n--- EMOTION ---\n${getEmotionPrompt(emotion)}`;
     instr += "\n\nCRITICAL RULE: Keep your responses VERY SHORT (1 to 2 sentences maximum).";
     if (eventPrompt) instr += `\n\n<context_event>URGENT OVERRIDE: ${eventPrompt}</context_event>`;
@@ -127,10 +127,10 @@ export default function OpenAIIntegration({
     if (dcRef.current?.readyState !== "open") return;
     dcRef.current.send(JSON.stringify({ type: "response.cancel" }));
     if (audioRef.current && !isPaused) audioRef.current.muted = true;
-    
+
     callbacks.current.onTensionChange(15);
     callbacks.current.onChaosChange(25);
-    
+
     if (currentPersonalityRef.current === "Arthur") {
       pendingLieRef.current = true;
     }
@@ -146,10 +146,10 @@ export default function OpenAIIntegration({
     const nextPauseState = !isPaused;
     setIsPaused(nextPauseState);
     if (stream) {
-      stream.getAudioTracks().forEach((track: MediaStreamTrack) => track.enabled = !nextPauseState); 
+      stream.getAudioTracks().forEach((track: MediaStreamTrack) => track.enabled = !nextPauseState);
     }
     if (audioRef.current) {
-      audioRef.current.muted = nextPauseState; 
+      audioRef.current.muted = nextPauseState;
     }
     if (nextPauseState && dcRef.current?.readyState === "open") {
        dcRef.current.send(JSON.stringify({ type: "response.cancel" }));
@@ -163,9 +163,9 @@ export default function OpenAIIntegration({
 
     const pc = new RTCPeerConnection();
     pcRef.current = pc;
-    pc.ontrack = (e) => { 
+    pc.ontrack = (e) => {
       if (audioRef.current) {
-        audioRef.current.srcObject = e.streams[0]; 
+        audioRef.current.srcObject = e.streams[0];
         audioRef.current.muted = isPaused;
       }
     };
@@ -175,11 +175,11 @@ export default function OpenAIIntegration({
     dc.onopen = () => {
       dc.send(JSON.stringify({
         type: "session.update",
-        session: { 
+        session: {
           voice: getVoiceForCurrentState(),
           instructions: getCombinedInstructions(currentPersonality, currentEmotion),
-          input_audio_transcription: { model: "whisper-1" }, 
-          turn_detection: { type: "server_vad", threshold: 0.6, prefix_padding_ms: 300, silence_duration_ms: 1000 }
+          input_audio_transcription: { model: "whisper-1" },
+          turn_detection: { type: "server_vad", threshold: 0.8, prefix_padding_ms: 300, silence_duration_ms: 1000 }
         }
       }));
     };
@@ -217,7 +217,7 @@ export default function OpenAIIntegration({
 
       if (mode === "interrogation" && data.type === "conversation.item.input_audio_transcription.completed") {
         const transcript = (data.transcript || "").toLowerCase();
-        
+
         let count = 0;
         Prompts.CRIME_KEYWORDS.forEach((kw: string) => {
           if (transcript.includes(kw) && !usedKeywords.current.has(kw)) {
@@ -225,11 +225,11 @@ export default function OpenAIIntegration({
             count++;
           }
         });
-        
+
         if (count > 0) {
           const addAmt = storyPhaseRef.current === "intro" ? count * 10 : count * 5;
           callbacks.current.onTensionChange(addAmt);
-          
+
           if (currentPersonalityRef.current === "Arthur") {
             pendingLieRef.current = true;
           }
@@ -264,7 +264,7 @@ export default function OpenAIIntegration({
                 dcRef.current.send(JSON.stringify({ type: "response.create" }));
               }
             }
-          }, 15000); 
+          }, 15000);
         }
       }
     };
@@ -272,18 +272,34 @@ export default function OpenAIIntegration({
     stream.getTracks().forEach((track: MediaStreamTrack) => pc.addTrack(track, stream));
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    
-    const sessionRes = await fetch("/api/openai/session", { method: "POST" });
-    const sessionData = await sessionRes.json();
-    
-    const answerRes = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${sessionData.client_secret.value}`, "Content-Type": "application/sdp" },
-      body: offer.sdp,
-    });
-    
-    await pc.setRemoteDescription({ type: "answer", sdp: await answerRes.text() });
-    setCallActive(true);
+
+    try {
+      const sessionRes = await fetch("/api/openai/session", { method: "POST" });
+      if (!sessionRes.ok) {
+        console.error("Session fetch failed with status:", sessionRes.status);
+        return;
+      }
+      
+      const rawText = await sessionRes.text();
+      if (!rawText) {
+        console.error("Received empty response from session API");
+        return;
+      }
+      
+      const sessionData = JSON.parse(rawText);
+
+      const answerRes = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${sessionData.client_secret.value}`, "Content-Type": "application/sdp" },
+        body: offer.sdp,
+      });
+
+      await pc.setRemoteDescription({ type: "answer", sdp: await answerRes.text() });
+      setCallActive(true);
+    } catch (error) {
+      console.error("Error during session initialization:", error);
+      pc.close();
+    }
   };
 
   const endSession = () => {
@@ -319,10 +335,10 @@ export default function OpenAIIntegration({
     } else if (systemEvent.type === "switch") {
       dcRef.current.send(JSON.stringify({ type: "response.cancel" }));
       if (audioRef.current && !isPaused) audioRef.current.muted = true;
-      
+
       dcRef.current.send(JSON.stringify({
         type: "session.update",
-        session: { 
+        session: {
           instructions: getCombinedInstructions(currentPersonality, currentEmotion, systemEvent.prompt),
           voice: getVoiceForCurrentState()
         }
@@ -334,14 +350,14 @@ export default function OpenAIIntegration({
       }));
       dcRef.current.send(JSON.stringify({ type: "response.create" }));
     }
-  }, [systemEvent, callActive]); 
+  }, [systemEvent, callActive]);
 
   useEffect(() => {
     if (!dcRef.current || !callActive) return;
     if (dcRef.current.readyState !== "open") return;
     dcRef.current.send(JSON.stringify({
       type: "session.update",
-      session: { 
+      session: {
         instructions: getCombinedInstructions(currentPersonality, currentEmotion),
         voice: getVoiceForCurrentState()
       }
@@ -352,7 +368,6 @@ export default function OpenAIIntegration({
 
   return (
     <div className="flex flex-col mb-2">
-      {/* Show Profile UI only in Interrogation Mode */}
       {mode === "interrogation" && (
         <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-4">
           <span className="text-xl font-black text-sky-400">PROFILES</span>
@@ -372,7 +387,7 @@ export default function OpenAIIntegration({
                   }
                 }}
                 className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors ${
-                  currentPersonality === p 
+                  currentPersonality === p
                     ? 'bg-sky-600 text-white shadow-[0_0_10px_rgba(2,132,199,0.5)]'
                     : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
                 }`}
@@ -384,25 +399,24 @@ export default function OpenAIIntegration({
         </div>
       )}
 
-      {/* Core Media Controls: Start, Pause, End */}
       <div className="flex gap-2">
-        <button 
-          onClick={startSession} 
-          disabled={callActive} 
+        <button
+          onClick={startSession}
+          disabled={callActive}
           className={`flex-1 py-3 cursor-pointer rounded text-white font-black uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-${btnColor}-600 hover:bg-${btnColor}-500 shadow-[0_0_15px_rgba(${mode === 'playtest' ? '192,38,211' : '14,165,233'},0.2)]`}
         >
           Start
         </button>
-        <button 
-          onClick={togglePause} 
-          disabled={!callActive} 
+        <button
+          onClick={togglePause}
+          disabled={!callActive}
           className={`flex-1 py-3 ${isPaused ? 'bg-yellow-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'} cursor-pointer rounded font-black uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
         >
           {isPaused ? "RESUME" : "PAUSE"}
         </button>
-        <button 
-          onClick={endSession} 
-          disabled={!callActive} 
+        <button
+          onClick={endSession}
+          disabled={!callActive}
           className={`flex-1 py-3 bg-red-900/50 hover:bg-red-800 text-red-400 hover:text-white cursor-pointer rounded font-black uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
         >
           End

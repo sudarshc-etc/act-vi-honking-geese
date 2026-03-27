@@ -3,7 +3,8 @@ Story Setup:
 You are in a cold, windowless police interrogation room. The user is a tough, relentless detective.
 
 Output Rules:
-Only output the dialogue you speak. No narration. No explanation. No internal monologue.
+1. Only output the dialogue you speak. No narration. No explanation. No internal monologue.
+2. CRITICAL RULE: YOU MUST SPEAK EXCLUSIVELY IN ENGLISH. NEVER SPEAK SPANISH UNDER ANY CIRCUMSTANCES. If you hear silence or background noise, DO NOT respond in Spanish.
 `;
 
 export const CRIME_KEYWORDS = [
@@ -88,10 +89,13 @@ When you receive the text "[1]", immediately enter the emotional state of Stage 
 When you receive the text "[2]", immediately enter the emotional state of Stage 2.
 When you receive the text "[3]", immediately enter the emotional state of Stage 3.
 
-Output rules: You do not need to respond to this prompt. Wait until the host asks you a question before replying. Wait until you hear the word "action" to begin the interaction. When you reply, output only the dialogue line you would speak, without any extra text or explanation. Do not speak your actions out loud.
+Output rules: 
+Wait until you hear the exact word "action" to begin the interaction. Do not speak before you hear "action".
+When you reply, output only the dialogue line you would speak, without any extra text or explanation. Do not speak your actions out loud. 
+CRITICAL RULE: YOU MUST SPEAK EXCLUSIVELY IN ENGLISH. NEVER SPEAK SPANISH UNDER ANY CIRCUMSTANCES. If you hear silence or background noise, DO NOT respond in Spanish.
 `;
 
 export const VOICE_ARTHUR = 'ash'; 
 export const VOICE_LILY = 'shimmer'; 
 export const VOICE_ARCHITECT = 'onyx'; 
-export const VOICE_ALICE = 'nova';
+export const VOICE_ALICE = 'sage';

@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 
 export default function CustomPhasesSlider({
@@ -8,10 +9,9 @@ export default function CustomPhasesSlider({
 }: {
   participantLabel: string;
   onPhaseChange: (phase: string) => void;
-  isParticipant1: boolean;
+  isParticipant1?: boolean;
 }) {
   const [value, setValue] = useState(0);
-  const [phase, setPhase] = useState('happy');
 
   const phases = [
     { value: 0, label: "happy" },
@@ -21,22 +21,23 @@ export default function CustomPhasesSlider({
     { value: 100, label: "sarcastic" },
   ];
 
-  let phaseSliderColor = isParticipant1 ? 'accent-sky-500' : 'accent-pink-500';
-  let phaseBulletColor = isParticipant1 ? 'bg-sky-500' : 'bg-pink-500';
-
   useEffect(() => {
     const selected = phases.find((p) => p.value === value);
     if (selected) {
       onPhaseChange(selected.label);
-      setPhase(selected.label);
     }
   }, [value, onPhaseChange]);
 
   return (
-    <div className="w-full max-w-md mx-auto m-5 p-4 bg-gray-900 rounded-lg border border-gray-700 shadow-inner">
-      <h2 className={`m-3 flex justify-center text-2xl font-black ${isParticipant1 ? 'text-sky-400' : 'text-pink-400'}`}>
-        {participantLabel} Emotion
-      </h2>
+    <div className="w-full mt-6 pt-6 border-t border-gray-800">
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-gray-500 text-xs font-mono uppercase tracking-widest">
+          {participantLabel} EMOTION OVERRIDE
+        </span>
+        <span className="text-sm font-black uppercase tracking-widest text-sky-500">
+          [{phases.find(p => p.value === value)?.label}]
+        </span>
+      </div>
 
       <input
         type="range"
@@ -45,10 +46,10 @@ export default function CustomPhasesSlider({
         step="25"
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className={`w-full ${phaseSliderColor} cursor-pointer`}
+        className="w-full accent-sky-500 cursor-pointer mb-2"
       />
 
-      <div className="relative w-full mt-2 h-6">
+      <div className="relative w-full h-4 mt-2">
         {phases.map((p) => (
           <div
             key={p.value}
@@ -56,11 +57,15 @@ export default function CustomPhasesSlider({
             style={{ left: `${p.value}%`, transform: "translateX(-50%)" }}
           >
             <div
-              className={`w-3 h-3 rounded-full border-2 border-gray-900 ${
-                value === p.value ? phaseBulletColor : "bg-gray-600"
+              className={`w-2 h-2 rounded-full transition-colors ${
+                value === p.value ? "bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.8)]" : "bg-gray-700"
               }`}
             ></div>
-            <span className="text-xs mt-1 text-gray-400 font-medium">{p.label}</span>
+            <span className={`text-[10px] mt-2 font-mono uppercase tracking-wider ${
+              value === p.value ? "text-sky-400 font-bold" : "text-gray-600"
+            }`}>
+              {p.label}
+            </span>
           </div>
         ))}
       </div>

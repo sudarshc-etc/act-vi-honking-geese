@@ -23,13 +23,84 @@ export default function OpenAIIntegration({
                                            "bg-linear-to-t from-sky-500 to-indigo-500";
 
   // Setup audio element
-  useEffect(() => {
+  /* useEffect(() => {
     audioRef.current = document.createElement("audio");
     audioRef.current.autoplay = true;
 
     return () => {
       pcRef.current?.close();
       audioRef.current?.remove();
+    };
+  }, []); */
+
+  useEffect(() => {
+    audioRef.current = document.createElement("audio");
+    audioRef.current.autoplay = true;
+
+    const audioCtx = new AudioContext();
+    let analyser: AnalyserNode;
+    let dataArray: Uint8Array;
+    let source: MediaElementAudioSourceNode;
+
+    const sendVolume = async (volume: number) => {
+      await fetch("/api/serial", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ volume }),
+      });
+    };
+
+    const startAnalyzing = () => {
+      if (!audioRef.current) return;
+
+      source = audioCtx.createMediaElementSource(audioRef.current);
+      analyser = audioCtx.createAnalyser();
+
+      analyser.fftSize = 256;
+      
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+
+      const tick = () => {
+        // @ts-ignore
+        analyser.getByteFrequencyData(dataArray);
+
+        // Get average volume
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const avg = sum / dataArray.length;
+
+        // Normalize to 0–100
+        const volume = Math.min(100, Math.floor((avg / 255) * 100));
+
+        sendVolume(volume);
+
+        requestAnimationFrame(tick);
+      };
+
+      tick();
+    };
+
+    if (audioRef.current) {
+      audioRef.current.onplay = () => {
+        audioCtx.resume(); // required for autoplay policies
+        startAnalyzing();
+      };
+
+      audioRef.current.onpause = () => sendVolume(0);
+      audioRef.current.onended = () => sendVolume(0);
+    }
+
+    return () => {
+      pcRef.current?.close();
+      audioRef.current?.remove();
+      audioCtx.close();
     };
   }, []);
 
@@ -138,7 +209,7 @@ export default function OpenAIIntegration({
 
     dcRef.current.send(JSON.stringify({
       type: "session.update",
-      session: { instructions: emotionInstruction }
+      session: { instructions: phase, voice: "alloy" }
     }));
 
   }, [phase]);

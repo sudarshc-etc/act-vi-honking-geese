@@ -12,6 +12,8 @@ export default function OpenAIIntegration({
   phase: string;
   stream: MediaStream | null;
 }) {
+  const portRef = useRef<any>(null);
+  const writerRef = useRef<any>(null);
   const [callActive, setCallActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -43,13 +45,17 @@ export default function OpenAIIntegration({
     let source: MediaElementAudioSourceNode;
 
     const sendVolume = async (volume: number) => {
-      await fetch("/api/serial", {
+      /* await fetch("/api/openai/serial", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ volume }),
-      });
+      }); */
+      if (!writerRef.current) return;
+      const data = new TextEncoder().encode(volume + "\n");
+      await writerRef.current.write(data);
+
     };
 
     const startAnalyzing = () => {
@@ -65,26 +71,35 @@ export default function OpenAIIntegration({
       source.connect(analyser);
       analyser.connect(audioCtx.destination);
 
-      const tick = () => {
-        // @ts-ignore
+      let lastSent = 0;
+
+      let smoothed = 0;
+
+      const tick = (time: number) => {
+        //@ts-ignore
         analyser.getByteFrequencyData(dataArray);
 
-        // Get average volume
         let sum = 0;
         for (let i = 0; i < dataArray.length; i++) {
           sum += dataArray[i];
         }
+
         const avg = sum / dataArray.length;
+        let volume = Math.min(100, Math.floor((avg / 255) * 100));
 
-        // Normalize to 0–100
-        const volume = Math.min(100, Math.floor((avg / 255) * 100));
+        if (volume < 10) volume = 0;
 
-        sendVolume(volume);
+        smoothed = smoothed + (volume - smoothed) * 0.3;
+
+        if (time - lastSent > 33) {
+          sendVolume(Math.floor(smoothed));
+          lastSent = time;
+        }
 
         requestAnimationFrame(tick);
       };
 
-      tick();
+      tick(0);
     };
 
     if (audioRef.current) {
@@ -98,6 +113,8 @@ export default function OpenAIIntegration({
     }
 
     return () => {
+      writerRef.current?.releaseLock();
+  portRef.current?.close();
       pcRef.current?.close();
       audioRef.current?.remove();
       audioCtx.close();
@@ -214,6 +231,35 @@ export default function OpenAIIntegration({
 
   }, [phase]);
 
+  const connectArduino = async () => {
+  try {
+    // close existing connection if any
+    if (writerRef.current) {
+      writerRef.current.releaseLock();
+      writerRef.current = null;
+    }
+
+    if (portRef.current) {
+      await portRef.current.close();
+      portRef.current = null;
+    }
+
+    const port = await (navigator as any).serial.requestPort();
+    await port.open({ baudRate: 9600 });
+
+    const writer = port.writable.getWriter();
+
+    portRef.current = port;
+    writerRef.current = writer;
+
+    await new AudioContext().resume();
+
+    console.log("Connected to Arduino ✅");
+  } catch (err) {
+    console.error("Connection failed:", err);
+  }
+};
+
   return (
     <div className="flex gap-4">
       <button
@@ -247,6 +293,15 @@ export default function OpenAIIntegration({
           className={`h-14 w-1/2 m-5 ${activeButtonClass} cursor-pointer rounded-lg`}
         >
           Resume
+        </button>
+      )}
+
+      {callActive && (
+        <button
+          onClick={connectArduino}
+          className={`h-14 w-1/2 m-5 ${activeButtonClass} cursor-pointer rounded-lg`}
+        >
+          Arduino
         </button>
       )}
     </div>

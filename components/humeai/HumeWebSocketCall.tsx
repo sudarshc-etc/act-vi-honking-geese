@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { NALA_BASE_PROMPTS, SIMBA_BASE_PROMPTS, NALA_VOICE, SIMBA_VOICE } from "./Charachters";
+import { HumeClient } from "hume";
 
 export default function HumeWebSocketCall({
   accessToken,
@@ -97,6 +98,10 @@ export default function HumeWebSocketCall({
       ws.send(
         JSON.stringify({
           type: "session_settings",
+          context:{
+            text: "You are not an assitant. You are an improv performer on a live dating show.",
+            type: 'persistent'
+          },
           system_prompt: basePrompt,
           voice_id: voice
         })
@@ -164,9 +169,10 @@ export default function HumeWebSocketCall({
     if (!wsRef.current || !callActive) return;
 
     const emotionInstruction = `
-        Current emotional tone: ${phase}.
-        Strongly express this emotion in voice, pacing, and word choice.
-        Do not sound monotone.
+        <adapt_to_change_in_expression_phase>
+          Current emotional tone, {{ ${phase} }}.
+          Mention the {{ ${phase} }} and strongly express this {{${phase}}} in voice, pacing, and word choice. Do not sound montonous.
+        </adapt_to_change_in_expression_phase>
     `;
 
     wsRef.current.send(

@@ -27,7 +27,7 @@ export default function Chat() {
         {/* SIMBA */}
         <div className="p-10 border-4 border-gray-500">
           <CustomPhasesSlider
-            gooseName="Simba"
+            pirticipantName="Simba"
             onPhaseChange={setSimbaPhase}
           />
           <OpenAIIntegration
@@ -40,7 +40,7 @@ export default function Chat() {
         {/* NALA */}
         <div className="p-10 border-4 border-gray-500">
           <CustomPhasesSlider
-            gooseName="Nala"
+            pirticipantName="Nala"
             onPhaseChange={setNalaPhase}
           />
           <OpenAIIntegration

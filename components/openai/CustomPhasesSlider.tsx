@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 
 export default function CustomPhasesSlider({
-  gooseName,
+  pirticipantName,
   onPhaseChange,
 }: {
-  gooseName: string;
+  pirticipantName: string;
   onPhaseChange: (phase: string) => void;
 }) {
   const [value, setValue] = useState(0);
@@ -19,9 +19,9 @@ export default function CustomPhasesSlider({
     { value: 100, label: "sarcastic" },
   ];
 
-  let phaseSliderColor = gooseName === 'Nala' ? 'accent-pink-500' : 'accent-blue-500';
+  let phaseSliderColor = pirticipantName === 'Nala' ? 'accent-pink-500' : 'accent-blue-500';
 
-  let phaseBulletColor = gooseName === 'Nala' ? 'bg-pink-500' : 'bg-blue-500';
+  let phaseBulletColor = pirticipantName === 'Nala' ? 'bg-pink-500' : 'bg-blue-500';
 
   useEffect(() => {
     const selected = phases.find((p) => p.value === value);
@@ -34,7 +34,7 @@ export default function CustomPhasesSlider({
   return (
     <div className="w-full max-w-md mx-auto m-10">
       <h2 className="m-3 flex justify-center text-4xl font-bold text-white-900">
-        {gooseName} Emotion
+        {pirticipantName} Emotion
       </h2>
 
       <input
@@ -66,7 +66,7 @@ export default function CustomPhasesSlider({
       </div>
 
       <p className="mt-11 text-center text-sm text-gray-600">
-        {gooseName} is now prompted to be: {phase}
+        {pirticipantName} is now prompted to be: {phase}
       </p>
     </div>
   );

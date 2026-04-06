@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  NALA_BASE_PROMPTS,
-  SIMBA_BASE_PROMPTS,
-  NALA_VOICE,
-  SIMBA_VOICE,
+  BEN_PROMPTS,
+  ALICE_PROMPTS,
+  VOICE_BEN,
+  VOICE_ALICE,
 } from "./OpenAIConstants";
 
 export default function OpenAIIntegration({
@@ -118,10 +118,10 @@ export default function OpenAIIntegration({
         JSON.stringify({
           type: "session.update",
           session: {
-            voice: isSimba ? SIMBA_VOICE : NALA_VOICE,
+            voice: isSimba ? VOICE_BEN : VOICE_ALICE,
             instructions: isSimba
-              ? SIMBA_BASE_PROMPTS
-              : NALA_BASE_PROMPTS,
+              ? BEN_PROMPTS
+              : ALICE_PROMPTS,
           },
         })
       );

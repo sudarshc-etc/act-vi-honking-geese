@@ -15,10 +15,10 @@ export default function MeinserExercise(){
     }, []);
 
     return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center font-sans text-white p-6 relative">
+        <div>
         
             <h1 className="text-4xl font-black mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-600">
-                Meinser Exercise
+                Meisner Exercise
             </h1>
             
             <div className="w-full max-w-md bg-[#0f1115] p-8 rounded-2xl border border-fuchsia-900/50 shadow-[0_0_30px_rgba(192,38,211,0.15)] relative overflow-hidden">

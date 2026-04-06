@@ -21,7 +21,7 @@ export default function OpenAIWebRTC({
   onLieStateChange,
   onPersonalityUnlock
 }: {
-  mode: "arduino" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow";
+  mode: "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow";
   participantIndex: number;
   currentPersonality: string;
   unlockedPersonalities: string[];
@@ -38,6 +38,11 @@ export default function OpenAIWebRTC({
   onLieStateChange: (state: boolean) => void;
   onPersonalityUnlock: (p: string) => void;
 }) {
+
+  const portRef = useRef<any>(null);
+  const writerRef = useRef<any>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
   const [callActive, setCallActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -78,9 +83,11 @@ export default function OpenAIWebRTC({
   }, []);
 
   const getBasePrompt = (personality: string) => {
-    if (personality === "Alice") return Prompts.ALICE_PROMPTS;
+    if (personality === "Lexi") return Prompts.LEXI_PROMPTS;
     if (personality === "Lily") return Prompts.LILY_PROMPTS;
     if (personality === "The Architect") return Prompts.ARCHITECT_PROMPTS;
+    if (personality === "Ben") return Prompts.BEN_PROMPTS;
+    if (personality === "Alice") return Prompts.ALICE_PROMPTS;
     return Prompts.ARTHUR_PROMPTS;
   };
 
@@ -117,9 +124,11 @@ export default function OpenAIWebRTC({
   };
 
   const getVoiceForCurrentState = () => {
-    if (currentPersonality === "Alice") return Prompts.VOICE_ALICE;
+    if (currentPersonality === "Lexi") return Prompts.VOICE_LEXI;
     if (currentPersonality === "Lily") return Prompts.VOICE_LILY;
     if (currentPersonality === "The Architect") return Prompts.VOICE_ARCHITECT;
+    if (currentPersonality === "Ben") return Prompts.VOICE_BEN;
+    if (currentPersonality === "Alice") return Prompts.VOICE_ALICE;
     return Prompts.VOICE_ARTHUR;
   };
 
@@ -163,11 +172,62 @@ export default function OpenAIWebRTC({
 
     const pc = new RTCPeerConnection();
     pcRef.current = pc;
-    pc.ontrack = (e) => {
+    pc.ontrack = async (e) => {
+      //Play audio
       if (audioRef.current) {
         audioRef.current.srcObject = e.streams[0];
-        audioRef.current.muted = isPaused;
       }
+
+      //Create ONE AudioContext (user-triggered)
+      const audioCtx = new AudioContext();
+      await audioCtx.resume();
+      audioCtxRef.current = audioCtx;
+
+      //Analyze stream directly
+      const source = audioCtx.createMediaStreamSource(e.streams[0]);
+      const analyser = audioCtx.createAnalyser();
+
+      analyser.fftSize = 256;
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      source.connect(analyser);
+
+      let smoothed = 0;
+      let lastSent = 0;
+
+      const tick = (time: number) => {
+        analyser.getByteFrequencyData(dataArray);
+
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+
+        const avg = sum / dataArray.length;
+
+        let volume = Math.min(100, Math.floor((avg / 50) * 100));
+
+        // optional noise gate
+        if (volume < 5) volume = 0;
+
+        // smoothing
+        smoothed = smoothed + (volume - smoothed) * 0.3;
+
+        // send to Arduino ~30fps
+        if (time - lastSent > 33) {
+          if (writerRef.current) {
+            const data = new TextEncoder().encode(
+              Math.floor(smoothed) + "\n"
+            );
+            writerRef.current.write(data);
+          }
+          lastSent = time;
+        }
+
+        requestAnimationFrame(tick);
+      };
+
+      tick(0);
     };
     const dc = pc.createDataChannel("oai-events");
     dcRef.current = dc;
@@ -366,6 +426,34 @@ export default function OpenAIWebRTC({
 
   const btnColor = mode === "talkshow" ? "fuchsia" : "sky";
 
+  const arduino = mode !== "datingshow";
+
+  const connectArduino = async () => {
+        try {
+        if (writerRef.current) {
+            writerRef.current.releaseLock();
+            writerRef.current = null;
+        }
+
+        if (portRef.current) {
+            await portRef.current.close();
+            portRef.current = null;
+        }
+
+        const port = await (navigator as any).serial.requestPort();
+        await port.open({ baudRate: 9600 });
+
+        const writer = port.writable.getWriter();
+
+        portRef.current = port;
+        writerRef.current = writer;
+
+        console.log("Connected to Arduino");
+        } catch (err) {
+        console.error("Connection failed:", err);
+        }
+    };
+
   return (
     <div className="flex flex-col mb-2">
       {mode === "gameplay" && (
@@ -386,7 +474,7 @@ export default function OpenAIWebRTC({
                     dcRef.current.send(JSON.stringify({ type: "response.create" }));
                   }
                 }}
-                className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors hover:cursor-pointer  ${
                   currentPersonality === p
                     ? 'bg-sky-600 text-white shadow-[0_0_10px_rgba(2,132,199,0.5)]'
                     : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
@@ -421,6 +509,14 @@ export default function OpenAIWebRTC({
         >
           End
         </button>
+        {callActive && arduino && (
+            <button
+            onClick={connectArduino}
+            className="bg-cyan-700 text-white hover:bg-cyan-600 cursor-pointer rounded font-black uppercase tracking-widest disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+            Arduino
+            </button>
+        )}
       </div>
     </div>
   );

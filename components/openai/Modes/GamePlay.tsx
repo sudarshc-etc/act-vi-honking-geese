@@ -86,7 +86,7 @@ export default function GamePlay(){
                 <div>
                   <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-pink-500">Gameplay Mechanics</h1>
                 </div>
-                <button onClick={handleSlamButton} className="bg-red-600 hover:bg-red-500 text-white font-black px-6 py-3 rounded-lg border border-red-400 shadow-[0_0_15px_rgba(220,38,38,0.7)]">🚨 SLAM TABLE</button>
+                <button onClick={handleSlamButton} className="bg-red-600 hover:bg-red-500 hover:cursor-pointer text-white font-black px-6 py-3 rounded-lg border border-red-400 shadow-[0_0_15px_rgba(220,38,38,0.7)]"> SLAM TABLE</button>
             </div>
         
             <div className="max-w-4xl mx-auto mt-6 px-6">

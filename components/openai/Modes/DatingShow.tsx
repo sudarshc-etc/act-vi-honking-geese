@@ -6,8 +6,8 @@ import OpenAIIntegration from "../OpenAIIntegration";
 import OpenAIWebRTC from "../OpenAIWebRTC";
 
 export default function DatingShow() {
-  const [simbaPhase, setSimbaPhase] = useState("happy");
-  const [nalaPhase, setNalaPhase] = useState("happy");
+  const [benPhase, setBenPhase] = useState("happy");
+  const [alicePhase, setAlicePhase] = useState("happy");
 
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
 
@@ -25,18 +25,18 @@ export default function DatingShow() {
         <span className="text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">The Geese Matchmaking Show</span>
       </h1>
       <div className="grid md:grid-cols-2 gap-6 p-6">
-        {/* SIMBA */}
+        {/* Ben */}
         <div className="p-10 border-4 border-gray-500">
           <CustomPhasesSlider
-            pirticipantName="Simba"
-            onPhaseChange={setSimbaPhase}
+            pirticipantName="Ben"
+            onPhaseChange={setBenPhase}
           />
           <OpenAIWebRTC
             mode="datingshow"
             participantIndex={0}
-            currentPersonality="Simba"
-            unlockedPersonalities={["Simba"]}
-            currentEmotion={simbaPhase}
+            currentPersonality="Ben"
+            unlockedPersonalities={["Ben"]}
+            currentEmotion={benPhase}
             storyPhase="intro"
             globalTension={0}
             chaosMeter={0}
@@ -51,18 +51,18 @@ export default function DatingShow() {
           />
         </div>
 
-        {/* NALA */}
+        {/* Alice */}
         <div className="p-10 border-4 border-gray-500">
           <CustomPhasesSlider
-            pirticipantName="Nala"
-            onPhaseChange={setNalaPhase}
+            pirticipantName="Alice"
+            onPhaseChange={setAlicePhase}
           />
           <OpenAIWebRTC
             mode="datingshow"
             participantIndex={0}
-            currentPersonality="Nala"
-            unlockedPersonalities={["Nala"]}
-            currentEmotion={nalaPhase}
+            currentPersonality="Alice"
+            unlockedPersonalities={["Alice"]}
+            currentEmotion={alicePhase}
             storyPhase="intro"
             globalTension={0}
             chaosMeter={0}

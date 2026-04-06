@@ -18,7 +18,7 @@ export default function TalkShow(){
         <div>
         
             <h1 className="text-4xl font-black mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-600">
-                Late Night Talkshow with Alice
+                Late Night Talkshow with Lexi
             </h1>
             
             <div className="w-full max-w-md bg-[#0f1115] p-8 rounded-2xl border border-fuchsia-900/50 shadow-[0_0_30px_rgba(192,38,211,0.15)] relative overflow-hidden">
@@ -26,8 +26,8 @@ export default function TalkShow(){
                 <OpenAIWebRTC
                     mode="talkshow"
                     participantIndex={0}
-                    currentPersonality="Alice"
-                    unlockedPersonalities={["Alice"]}
+                    currentPersonality="Lexi"
+                    unlockedPersonalities={["Lexi"]}
                     currentEmotion="happy"
                     storyPhase="intro"
                     globalTension={0}

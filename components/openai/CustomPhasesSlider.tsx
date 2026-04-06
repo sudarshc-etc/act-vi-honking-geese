@@ -44,7 +44,7 @@ export default function CustomPhasesSlider({
         step="25"
         value={value}
         onChange={(e) => setValue(Number(e.target.value))}
-        className={`w-full ${phaseSliderColor}`}
+        className={`w-full hover:cursor-pointer ${phaseSliderColor}`}
       />
 
       {/* phases */}

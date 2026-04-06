@@ -13,7 +13,7 @@ export default function Home() {
           priority // Loads image immediately
         />
         <h1 className="m-3 text-center font-bold text-heading md:text-5xl lg:text-6xl">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r to-pink-300 from-gray-400">Team Act-VI <br/><br/>  AI CHARCHTER UI </span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r to-pink-300 from-gray-400">Team Act-VI <br/><br/>  AI Interations UI </span>
         </h1>
         <Link href="/openai" className="m-3 text-white bg-gray-700 px-4 py-2 rounded hover:bg-gray-300">Open AI Iterations</Link>
         {/* <Link href="/hume" className="m-3 text-white bg-pink-700 px-4 py-2 rounded hover:bg-pink-300">Hume AI (Emotion Voice)</Link> */}

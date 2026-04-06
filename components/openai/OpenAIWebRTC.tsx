@@ -88,6 +88,9 @@ export default function OpenAIWebRTC({
     if (personality === "The Architect") return Prompts.ARCHITECT_PROMPTS;
     if (personality === "Ben") return Prompts.BEN_PROMPTS;
     if (personality === "Alice") return Prompts.ALICE_PROMPTS;
+    if (personality === "Meinser") return Prompts.MEISNER_PROMPT;
+    if (personality === "Boris") return Prompts.BORIS_PROMPT;
+    if (personality === "Beckett") return Prompts.BECKETT_PROMPT;
     return Prompts.ARTHUR_PROMPTS;
   };
 
@@ -129,6 +132,9 @@ export default function OpenAIWebRTC({
     if (currentPersonality === "The Architect") return Prompts.VOICE_ARCHITECT;
     if (currentPersonality === "Ben") return Prompts.VOICE_BEN;
     if (currentPersonality === "Alice") return Prompts.VOICE_ALICE;
+    if (currentPersonality === "Meisner") return Prompts.VOICE_MESINER_EXERCISE;
+    if (currentPersonality === "Boris") return Prompts.VOICE_BORIS;
+    if (currentPersonality === "Beckett") return Prompts.VOICE_BECKETT;
     return Prompts.VOICE_ARTHUR;
   };
 

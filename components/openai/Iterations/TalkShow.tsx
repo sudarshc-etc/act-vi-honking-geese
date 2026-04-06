@@ -15,14 +15,14 @@ export default function TalkShow(){
     }, []);
 
     return (
-        <div>
+        <div className="w-full flex flex-col items-center justify-center">
         
-            <h1 className="text-4xl font-black mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-600">
+            <h1 className="text-4xl font-black mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-600">
                 Late Night Talkshow with Lexi
             </h1>
             
-            <div className="w-full max-w-md bg-[#0f1115] p-8 rounded-2xl border border-fuchsia-900/50 shadow-[0_0_30px_rgba(192,38,211,0.15)] relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-fuchsia-500"></div>
+            <div className="w-full max-w-md bg-[#0f1115] p-8 rounded-2xl border border-green-900/50 shadow-[0_0_30px_rgba(192,38,211,0.15)] relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
                 <OpenAIWebRTC
                     mode="talkshow"
                     participantIndex={0}

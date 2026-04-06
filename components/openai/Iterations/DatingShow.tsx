@@ -20,7 +20,7 @@ export default function DatingShow() {
   }, []);
 
   return (
-    <div>
+    <div className="w-full flex flex-col items-center justify-center">
       <h1 className="m-3 flex justify-center font-bold text-heading md:text-5xl lg:text-6xl">
         <span className="text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">The Geese Matchmaking Show</span>
       </h1>

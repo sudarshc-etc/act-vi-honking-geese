@@ -19,9 +19,9 @@ export default function CustomPhasesSlider({
     { value: 100, label: "sarcastic" },
   ];
 
-  let phaseSliderColor = pirticipantName === 'Nala' ? 'accent-pink-500' : 'accent-blue-500';
+  let phaseSliderColor = pirticipantName === 'Alice' ? 'accent-pink-500' : 'accent-blue-500';
 
-  let phaseBulletColor = pirticipantName === 'Nala' ? 'bg-pink-500' : 'bg-blue-500';
+  let phaseBulletColor = pirticipantName === 'Alice' ? 'bg-pink-500' : 'bg-blue-500';
 
   useEffect(() => {
     const selected = phases.find((p) => p.value === value);

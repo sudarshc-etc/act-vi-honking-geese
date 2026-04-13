@@ -21,7 +21,7 @@ export default function OpenAIWebRTC({
   onLieStateChange,
   onPersonalityUnlock
 }: {
-  mode: "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow";
+  mode: "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow" | "boris" | "beckett" | "interrogation";
   participantIndex: number;
   currentPersonality: string;
   unlockedPersonalities: string[];
@@ -91,6 +91,8 @@ export default function OpenAIWebRTC({
     if (personality === "Meinser") return Prompts.MEISNER_PROMPT;
     if (personality === "Boris") return Prompts.BORIS_PROMPT;
     if (personality === "Beckett") return Prompts.BECKETT_PROMPT;
+    if (personality === "Abe") return Prompts.ABE_PROMPT;
+    if (personality === "Dave") return Prompts.DAVE_PROMPT;
     return Prompts.ARTHUR_PROMPTS;
   };
 
@@ -135,6 +137,8 @@ export default function OpenAIWebRTC({
     if (currentPersonality === "Meisner") return Prompts.VOICE_MESINER_EXERCISE;
     if (currentPersonality === "Boris") return Prompts.VOICE_BORIS;
     if (currentPersonality === "Beckett") return Prompts.VOICE_BECKETT;
+    if (currentPersonality === "Abe") return Prompts.VOICE_ABE;
+    if (currentPersonality === "Dave") return Prompts.VOICE_DAVE;
     return Prompts.VOICE_ARTHUR;
   };
 
@@ -462,7 +466,7 @@ export default function OpenAIWebRTC({
 
   return (
     <div className="flex flex-col mb-2">
-      {mode === "gameplay" && (
+      {(mode === "gameplay" || mode === "interrogation") && (
         <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-4">
           <span className="text-xl font-black text-sky-400">PROFILES</span>
           <div className="flex gap-2 flex-wrap justify-end max-w-[60%]">

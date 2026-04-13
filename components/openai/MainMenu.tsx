@@ -7,8 +7,9 @@ import TalkShow from "./Iterations/TalkShow";
 import MeinserExercise from "./Iterations/MeisnerExercise";
 import BorisExercise from "./Iterations/BorisExercise";
 import WaitingForGodot from "./Iterations/WaitingForGodot";
+import InterrogationNegotiation from "./Iterations/InterrogationNegotiation";
 
-type Mode = "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow" | "boris" | "beckett";
+type Mode = "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow" | "boris" | "beckett" | "interrogation";
 
 export default function MainMenu() {
     const [mode, setMode] = useState<Mode>("menu");
@@ -97,6 +98,20 @@ export default function MainMenu() {
         );
     }
 
+    if (mode === "interrogation") {
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center font-sans text-white p-6 relative">
+                <button 
+                    onClick={() => setMode("menu")}
+                    className="absolute top-6 left-6 text-gray-500 hover:text-white hover:cursor-pointer font-bold uppercase tracking-widest text-sm"
+                >
+                    Back to Menu
+                </button>
+                <InterrogationNegotiation/>
+            </div>
+        );
+    }
+
     if (mode === "menu") {
         return (
         <div className="min-h-screen bg-black flex flex-col items-center justify-center font-sans text-white p-6">
@@ -139,6 +154,12 @@ export default function MainMenu() {
                     className="w-full py-4 bg-yellow-900/30 border border-yellow-500 hover:bg-yellow-600 hover:cursor-pointer rounded-lg text-fuchsia-100 font-black uppercase tracking-widest transition-all hover:scale-105"
                 >
                     Waiting For Godot
+                </button>
+                <button 
+                    onClick={() => { setMode("interrogation"); }}
+                    className="w-full py-4 bg-teal-900/30 border border-teal-500 hover:bg-teal-600 hover:cursor-pointer rounded-lg text-fuchsia-100 font-black uppercase tracking-widest transition-all hover:scale-105"
+                >
+                    Interrogation Negotiation
                 </button>
             </div>
         </div>

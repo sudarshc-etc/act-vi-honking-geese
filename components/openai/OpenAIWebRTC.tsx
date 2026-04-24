@@ -215,13 +215,20 @@ export default function OpenAIWebRTC({
 
         const avg = sum / dataArray.length;
 
-        let volume = Math.min(100, Math.floor((avg / 50) * 100));
+        const noiseFloor = 15; // adjust this
+
+        let volume = Math.min(100, Math.floor(((avg - noiseFloor) / 50) * 100));
+        volume = Math.max(0, volume);
 
         // optional noise gate
-        if (volume < 5) volume = 0;
+        if (volume < 20) volume = 0;
 
         // smoothing
-        smoothed = smoothed + (volume - smoothed) * 0.3;
+        smoothed = volume;
+
+        if (volume === 0) {
+          smoothed *= 0.5; // snap shut faster
+        }
 
         // send to Arduino ~30fps
         if (time - lastSent > 33) {

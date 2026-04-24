@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CustomPhasesSlider from "../CustomPhasesSlider";
-import OpenAIWebRTC from "../OpenAIWebRTC";
+import OpenIWebRTCDatingShow from "../OpenIWebRTCDatingShow";
 
 export default function DatingShow() {
   const [benPhase, setBenPhase] = useState("happy");
@@ -30,23 +30,10 @@ export default function DatingShow() {
             pirticipantName="Ben"
             onPhaseChange={setBenPhase}
           />
-          <OpenAIWebRTC
-            mode="datingshow"
-            participantIndex={0}
-            currentPersonality="Ben"
-            unlockedPersonalities={["Ben"]}
-            currentEmotion={benPhase}
-            storyPhase="intro"
-            globalTension={0}
-            chaosMeter={0}
+          <OpenIWebRTCDatingShow
+            gooseName="Ben"
+            phase={benPhase}
             stream={micStream}
-            systemEvent={null}
-            onPersonalityChange={() => {}}
-            onTensionChange={() => {}}
-            onChaosChange={() => {}}
-            onLieDetected={() => {}}
-            onLieStateChange={() => {}}
-            onPersonalityUnlock={() => {}}
           />
         </div>
 
@@ -56,23 +43,10 @@ export default function DatingShow() {
             pirticipantName="Alice"
             onPhaseChange={setAlicePhase}
           />
-          <OpenAIWebRTC
-            mode="datingshow"
-            participantIndex={0}
-            currentPersonality="Alice"
-            unlockedPersonalities={["Alice"]}
-            currentEmotion={alicePhase}
-            storyPhase="intro"
-            globalTension={0}
-            chaosMeter={0}
+          <OpenIWebRTCDatingShow
+            gooseName="Alice"
+            phase={alicePhase}
             stream={micStream}
-            systemEvent={null}
-            onPersonalityChange={() => {}}
-            onTensionChange={() => {}}
-            onChaosChange={() => {}}
-            onLieDetected={() => {}}
-            onLieStateChange={() => {}}
-            onPersonalityUnlock={() => {}}
           />
         </div>
       </div>

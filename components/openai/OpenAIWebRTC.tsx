@@ -88,7 +88,7 @@ export default function OpenAIWebRTC({
     if (personality === "The Architect") return Prompts.ARCHITECT_PROMPTS;
     if (personality === "Ben") return Prompts.BEN_PROMPTS;
     if (personality === "Alice") return Prompts.ALICE_PROMPTS;
-    if (personality === "Meinser") return Prompts.MEISNER_PROMPT;
+    if (personality === "Meisner") return Prompts.MEISNER_PROMPT;
     if (personality === "Boris") return Prompts.BORIS_PROMPT;
     if (personality === "Beckett") return Prompts.BECKETT_PROMPT;
     if (personality === "Abe") return Prompts.ABE_PROMPT;

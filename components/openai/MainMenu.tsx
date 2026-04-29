@@ -8,8 +8,9 @@ import MeinserExercise from "./Iterations/MeisnerExercise";
 import BorisExercise from "./Iterations/BorisExercise";
 import WaitingForGodot from "./Iterations/WaitingForGodot";
 import InterrogationNegotiation from "./Iterations/InterrogationNegotiation";
+import Ghost from "./Iterations/Ghost";
 
-type Mode = "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow" | "boris" | "beckett" | "interrogation";
+type Mode = "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow" | "boris" | "beckett" | "interrogation" | "ghostcall";
 
 export default function MainMenu() {
     const [mode, setMode] = useState<Mode>("menu");
@@ -112,6 +113,20 @@ export default function MainMenu() {
         );
     }
 
+    if (mode === "ghostcall") {
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center font-sans text-white p-6 relative">
+                <button 
+                    onClick={() => setMode("menu")}
+                    className="absolute top-6 left-6 text-gray-500 hover:text-white hover:cursor-pointer font-bold uppercase tracking-widest text-sm"
+                >
+                    Back to Menu
+                </button>
+                <Ghost/>
+            </div>
+        );
+    }
+
     if (mode === "menu") {
         return (
         <div className="min-h-screen bg-black flex flex-col items-center justify-center font-sans text-white p-6">
@@ -160,6 +175,12 @@ export default function MainMenu() {
                     className="w-full py-4 bg-teal-900/30 border border-teal-500 hover:bg-teal-600 hover:cursor-pointer rounded-lg text-fuchsia-100 font-black uppercase tracking-widest transition-all hover:scale-105"
                 >
                     Interrogation Negotiation
+                </button>
+                <button 
+                    onClick={() => { setMode("ghostcall"); }}
+                    className="w-full py-4 bg-red-900/30 border border-red-500 hover:bg-red-600 hover:cursor-pointer rounded-lg text-fuchsia-100 font-black uppercase tracking-widest transition-all hover:scale-105"
+                >
+                    Ghost Call
                 </button>
             </div>
         </div>

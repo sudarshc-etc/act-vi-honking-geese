@@ -21,7 +21,7 @@ export default function OpenAIWebRTC({
   onLieStateChange,
   onPersonalityUnlock
 }: {
-  mode: "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow" | "boris" | "beckett" | "interrogation";
+  mode: "menu" | "datingshow" | "gameplay" | "meisnerexercise" | "talkshow" | "boris" | "beckett" | "interrogation" | "ghostcall";
   participantIndex: number;
   currentPersonality: string;
   unlockedPersonalities: string[];
@@ -93,6 +93,7 @@ export default function OpenAIWebRTC({
     if (personality === "Beckett") return Prompts.BECKETT_PROMPT;
     if (personality === "Abe") return Prompts.ABE_PROMPT;
     if (personality === "Dave") return Prompts.DAVE_PROMPT;
+    if (personality === "Ghost") return Prompts.GHOST_PROMPT;
     return Prompts.ARTHUR_PROMPTS;
   };
 
@@ -139,6 +140,7 @@ export default function OpenAIWebRTC({
     if (currentPersonality === "Beckett") return Prompts.VOICE_BECKETT;
     if (currentPersonality === "Abe") return Prompts.VOICE_ABE;
     if (currentPersonality === "Dave") return Prompts.VOICE_DAVE;
+    if (currentPersonality === "Ghost") return Prompts.VOICE_GHOST;
     return Prompts.VOICE_ARTHUR;
   };
 
